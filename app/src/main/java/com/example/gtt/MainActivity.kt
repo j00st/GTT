@@ -56,6 +56,7 @@ class MainActivity : ComponentActivity() {
                         val visits by db.getAllVisits().collectAsState(initial = emptyList())
                         val activeVisit by dashboardViewModel.activeVisit.collectAsState()
                         val totalHoursThisWeek by dashboardViewModel.totalHoursThisWeek.collectAsState()
+                        val liveStatus by dashboardViewModel.liveStatus.collectAsState()
                         
                         NavHost(navController = navController, startDestination = "dashboard") {
                             composable("dashboard") {
@@ -65,10 +66,19 @@ class MainActivity : ComponentActivity() {
                                     locations = locations,
                                     activeVisit = activeVisit,
                                     totalHoursThisWeek = totalHoursThisWeek,
+                                    liveStatus = liveStatus,
                                     onPunchOut = {
                                         activeVisit?.let { visit ->
                                             dashboardViewModel.punchOut(visit)
                                             TrackingForegroundService.stopService(this@MainActivity)
+                                        }
+                                    },
+                                    onResetAppClick = {
+                                        scope.launch {
+                                            locations.forEach { location ->
+                                                geofencingClient.removeGeofences(listOf(location.id.toString()))
+                                            }
+                                            dashboardViewModel.resetData()
                                         }
                                     }
                                 )
@@ -77,6 +87,12 @@ class MainActivity : ComponentActivity() {
                                 AddZoneScreen(
                                     onSaveClick = { name, lat, lng, radius ->
                                         scope.launch {
+                                            // Remove old geofences and locations if any
+                                            locations.forEach { location ->
+                                                geofencingClient.removeGeofences(listOf(location.id.toString()))
+                                            }
+                                            db.deleteAllLocations()
+                                            
                                             val id = db.insertLocation(LocationEntity(name = name, latitude = lat, longitude = lng, radiusMeters = radius)).toInt()
                                             
                                             // Add geofence
@@ -98,6 +114,13 @@ class MainActivity : ComponentActivity() {
                                             )
                                             
                                             geofencingClient.addGeofences(geofencingRequest, pendingIntent)
+
+                                            // Auto-trigger ENTER since we created it exactly at our current location
+                                            val active = db.getActiveVisit()
+                                            if (active == null) {
+                                                db.insertVisit(com.example.gtt.data.VisitEntity(locationId = id, entryTime = System.currentTimeMillis()))
+                                                TrackingForegroundService.startService(this@MainActivity, "Tracking time...", id)
+                                            }
                                             
                                             navController.popBackStack()
                                         }

@@ -15,6 +15,17 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Calendar
+import android.annotation.SuppressLint
+import android.location.Location
+import android.os.Looper
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.combine
 
 class DashboardViewModel(application: Application) : AndroidViewModel(application) {
     private val db = AppDatabase.getDatabase(application).gttDao()
@@ -62,4 +73,41 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+
+    fun resetData() {
+        viewModelScope.launch {
+            db.deleteAllVisits()
+            db.deleteAllLocations()
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun getLocationUpdates(): Flow<Location> = callbackFlow {
+        val client = LocationServices.getFusedLocationProviderClient(getApplication<Application>())
+        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
+            .setMinUpdateIntervalMillis(2000)
+            .build()
+
+        val callback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                result.lastLocation?.let { trySend(it) }
+            }
+        }
+
+        client.requestLocationUpdates(request, callback, Looper.getMainLooper())
+        awaitClose { client.removeLocationUpdates(callback) }
+    }
+
+    val liveStatus = combine(locations, getLocationUpdates()) { locs, currentLoc ->
+        val zone = locs.firstOrNull() ?: return@combine null
+        val results = FloatArray(1)
+        Location.distanceBetween(
+            currentLoc.latitude, currentLoc.longitude,
+            zone.latitude, zone.longitude,
+            results
+        )
+        val distance = results[0]
+        val isInside = distance <= zone.radiusMeters
+        Pair(distance, isInside)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 }

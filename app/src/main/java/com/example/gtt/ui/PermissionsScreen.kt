@@ -11,13 +11,27 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import android.content.pm.PackageManager
 
 @Composable
 fun PermissionsScreen(onPermissionsGranted: () -> Unit) {
-    var notificationGranted by remember { mutableStateOf(false) }
-    var locationGranted by remember { mutableStateOf(false) }
-    var backgroundLocationGranted by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    
+    var notificationGranted by remember { 
+        mutableStateOf(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || 
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) 
+    }
+    var locationGranted by remember { 
+        mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED || 
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) 
+    }
+    var backgroundLocationGranted by remember { 
+        mutableStateOf(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || 
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED) 
+    }
 
     val notificationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()

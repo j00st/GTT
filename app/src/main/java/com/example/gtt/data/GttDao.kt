@@ -37,4 +37,10 @@ interface GttDao {
 
     @Query("SELECT SUM(exitTime - entryTime) FROM visits WHERE locationId = :locationId AND exitTime IS NOT NULL AND entryTime >= :startTime AND entryTime <= :endTime")
     fun getTotalDurationForLocationInRange(locationId: Int, startTime: Long, endTime: Long): Flow<Long?>
+
+    @Query("DELETE FROM locations")
+    suspend fun deleteAllLocations()
+
+    @Query("DELETE FROM visits")
+    suspend fun deleteAllVisits()
 }
