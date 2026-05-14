@@ -9,4 +9,4 @@ GTT is a "Universal Location-Based Time Logger." It automatically tracks hours s
 
 ## 📥 Download
 
-Download the latest version here: **[GTT v0.1.0-alpha](https://github.com/j00st/GTT/releases/tag/v0.1.0-alpha)**
+Download the latest version here: **[GTT v0.2.0-alpha](https://github.com/j00st/GTT/releases/tag/v0.2.0-alpha)**
