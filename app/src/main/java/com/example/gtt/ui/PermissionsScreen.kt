@@ -25,8 +25,7 @@ fun PermissionsScreen(onPermissionsGranted: () -> Unit) {
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) 
     }
     var locationGranted by remember { 
-        mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED || 
-            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) 
+        mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) 
     }
     var backgroundLocationGranted by remember { 
         mutableStateOf(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || 
@@ -40,8 +39,7 @@ fun PermissionsScreen(onPermissionsGranted: () -> Unit) {
     val locationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        locationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        locationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
     }
 
     val bgLocationLauncher = rememberLauncherForActivityResult(
@@ -67,13 +65,18 @@ fun PermissionsScreen(onPermissionsGranted: () -> Unit) {
                 Text("Grant Notification Permission")
             }
         } else if (!locationGranted) {
+            val coarseGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            if (coarseGranted) {
+                Text("Geofencing requires Precise Location. Please upgrade to Precise Location.")
+                Spacer(modifier = Modifier.height(8.dp))
+            }
             Button(onClick = { 
                 locationLauncher.launch(arrayOf(
                     Manifest.permission.ACCESS_FINE_LOCATION,
                     Manifest.permission.ACCESS_COARSE_LOCATION
                 ))
             }) {
-                Text("Grant Location Permission")
+                Text(if (coarseGranted) "Upgrade to Precise Location" else "Grant Location Permission")
             }
         } else if (!backgroundLocationGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             Text("Please select 'Allow all the time' in the next screen for background tracking.")

@@ -73,6 +73,11 @@ class TrackingForegroundService : Service() {
         serviceJob.cancel()
     }
 
+    override fun onTimeout(startId: Int) {
+        super.onTimeout(startId)
+        handlePunchOut()
+    }
+
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
