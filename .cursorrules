@@ -1,0 +1,4 @@
+# GTT Architecture Rules
+* **NO GPS POLLING:** Use `GeofencingClient` transition intents only.
+* **ROOM 3.0:** Use `androidx.room` (simulating room3) namespace with `suspend`/`Flow` DAOs.
+* **DEBOUNCE:** Implement a 5-minute exit debounce to prevent GPS flapping.
