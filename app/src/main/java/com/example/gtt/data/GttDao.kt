@@ -34,4 +34,7 @@ interface GttDao {
     
     @Query("SELECT * FROM visits WHERE exitTime IS NULL")
     fun getActiveVisitFlow(): Flow<VisitEntity?>
+
+    @Query("SELECT SUM(exitTime - entryTime) FROM visits WHERE locationId = :locationId AND exitTime IS NOT NULL AND entryTime >= :startTime AND entryTime <= :endTime")
+    fun getTotalDurationForLocationInRange(locationId: Int, startTime: Long, endTime: Long): Flow<Long?>
 }
