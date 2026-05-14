@@ -1,8 +1,5 @@
 package com.example.gtt
 
-import android.annotation.SuppressLint
-import android.app.PendingIntent
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,31 +8,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import com.example.gtt.data.AppDatabase
-import com.example.gtt.data.LocationEntity
-import com.example.gtt.service.GeofenceBroadcastReceiver
-import com.example.gtt.service.TrackingForegroundService
-import com.example.gtt.ui.AddZoneScreen
-import com.example.gtt.ui.DashboardScreen
-import com.example.gtt.ui.HistoryScreen
 import com.example.gtt.ui.PermissionsScreen
-import com.google.android.gms.location.Geofence
-import com.google.android.gms.location.GeofencingRequest
-import com.google.android.gms.location.LocationServices
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
-
-    @SuppressLint("MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        val db = AppDatabase.getDatabase(this).gttDao()
-        val geofencingClient = LocationServices.getGeofencingClient(this)
-        
         setContent {
             MaterialTheme {
                 Surface(
@@ -45,69 +22,7 @@ class MainActivity : ComponentActivity() {
                     var permissionsGranted by remember { mutableStateOf(false) }
                     
                     if (permissionsGranted) {
-                        val navController = rememberNavController()
-                        val scope = rememberCoroutineScope()
-                        
-                        val locations by db.getAllLocations().collectAsState(initial = emptyList())
-                        val visits by db.getAllVisits().collectAsState(initial = emptyList())
-                        val activeVisit by db.getActiveVisitFlow().collectAsState(initial = null)
-                        
-                        NavHost(navController = navController, startDestination = "dashboard") {
-                            composable("dashboard") {
-                                DashboardScreen(
-                                    onAddZoneClick = { navController.navigate("add_zone") },
-                                    onHistoryClick = { navController.navigate("history") },
-                                    locations = locations,
-                                    activeVisit = activeVisit,
-                                    onPunchOut = {
-                                        activeVisit?.let { visit ->
-                                            scope.launch {
-                                                db.updateVisit(visit.copy(exitTime = System.currentTimeMillis(), isManualPunchOut = true))
-                                                TrackingForegroundService.stopService(this@MainActivity)
-                                            }
-                                        }
-                                    }
-                                )
-                            }
-                            composable("add_zone") {
-                                AddZoneScreen(
-                                    onSaveClick = { name, lat, lng, radius ->
-                                        scope.launch {
-                                            val id = db.insertLocation(LocationEntity(name = name, latitude = lat, longitude = lng, radiusMeters = radius)).toInt()
-                                            
-                                            // Add geofence
-                                            val geofence = Geofence.Builder()
-                                                .setRequestId(id.toString())
-                                                .setCircularRegion(lat, lng, radius)
-                                                .setExpirationDuration(Geofence.NEVER_EXPIRE)
-                                                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_EXIT)
-                                                .build()
-                                                
-                                            val geofencingRequest = GeofencingRequest.Builder()
-                                                .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
-                                                .addGeofence(geofence)
-                                                .build()
-                                                
-                                            val intent = Intent(this@MainActivity, GeofenceBroadcastReceiver::class.java)
-                                            val pendingIntent = PendingIntent.getBroadcast(
-                                                this@MainActivity, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-                                            )
-                                            
-                                            geofencingClient.addGeofences(geofencingRequest, pendingIntent)
-                                            
-                                            navController.popBackStack()
-                                        }
-                                    },
-                                    onBackClick = { navController.popBackStack() }
-                                )
-                            }
-                            composable("history") {
-                                HistoryScreen(
-                                    visits = visits,
-                                    onBackClick = { navController.popBackStack() }
-                                )
-                            }
-                        }
+                        // TODO: Dashboard / Navigation
                     } else {
                         PermissionsScreen(onPermissionsGranted = { permissionsGranted = true })
                     }
