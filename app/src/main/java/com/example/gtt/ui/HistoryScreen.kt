@@ -39,7 +39,7 @@ fun HistoryScreen(
                     headlineContent = { Text("Location ID: ${visit.locationId}") },
                     supportingContent = { Text("Entry: $entryStr\nExit: $exitStr") }
                 )
-                Divider()
+                HorizontalDivider()
             }
         }
     }

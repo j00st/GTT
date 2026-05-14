@@ -20,6 +20,7 @@ fun DashboardScreen(
     onHistoryClick: () -> Unit,
     locations: List<LocationEntity>,
     activeVisit: VisitEntity?,
+    totalHoursThisWeek: Double,
     onPunchOut: () -> Unit
 ) {
     Scaffold(
@@ -44,7 +45,8 @@ fun DashboardScreen(
             Card(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("Total Hours This Week", style = MaterialTheme.typography.titleMedium)
-                    Text("0.0 hrs", style = MaterialTheme.typography.displayMedium) // Placeholder
+                    val hoursStr = String.format(java.util.Locale.getDefault(), "%.1f hrs", totalHoursThisWeek)
+                    Text(hoursStr, style = MaterialTheme.typography.displayMedium)
                 }
             }
 
@@ -71,7 +73,7 @@ fun DashboardScreen(
                         headlineContent = { Text(location.name) },
                         supportingContent = { Text("Radius: ${location.radiusMeters}m") }
                     )
-                    Divider()
+                    HorizontalDivider()
                 }
             }
         }
