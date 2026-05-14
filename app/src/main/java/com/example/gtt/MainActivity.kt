@@ -89,7 +89,7 @@ class MainActivity : ComponentActivity() {
                                                 
                                             val geofencingRequest = GeofencingRequest.Builder()
                                                 .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
-                                                .addGeofences(geofence)
+                                                .addGeofence(geofence)
                                                 .build()
                                                 
                                             val intent = Intent(this@MainActivity, GeofenceBroadcastReceiver::class.java)
